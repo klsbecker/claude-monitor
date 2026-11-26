@@ -1,0 +1,5 @@
+# Pinned: rustc 1.91+ on windows-gnu links std's WaitOnAddress straight from KERNEL32, which does not export
+# it on every Windows build, so the exe would fail to start there.
+[toolchain]
+channel = "1.90.0"
+components = ["rustfmt", "clippy"]

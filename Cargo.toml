@@ -1,0 +1,51 @@
+[package]
+name = "claude-monitor"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.90"
+description = "Claude plan usage (session and week) on the Windows taskbar"
+authors = ["Klaus Becker"]
+license = "MIT"
+repository = "https://github.com/klsbecker/claude-monitor"
+readme = "README.md"
+keywords = ["claude", "windows", "taskbar", "usage", "widget"]
+categories = ["gui"]
+publish = false
+
+[[bin]]
+name = "ClaudeMonitor"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1"
+
+[dependencies.windows]
+version = "0.62.2"
+features = [
+  "Win32_Foundation",
+  "Win32_Globalization",
+  "Win32_Graphics_Gdi",
+  "Win32_Networking_WinHttp",
+  "Win32_Security",
+  "Win32_System_Com",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Registry",
+  "Win32_System_SystemInformation",
+  "Win32_System_Threading",
+  "Win32_System_Time",
+  "Win32_UI_Controls_Dialogs",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+]
+
+[build-dependencies]
+embed-manifest = "1.4"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

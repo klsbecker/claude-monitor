@@ -1,0 +1,47 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! Never paste tokens or the contents of `.credentials.json`.
+  - type: input
+    id: version
+    attributes:
+      label: Claude Monitor version
+      description: Menu → About
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Display mode
+      options: [Taskbar strip, Notification-area icon]
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Relevant lines of `%LOCALAPPDATA%\ClaudeMonitor\claude-monitor.log`
+      render: text
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot

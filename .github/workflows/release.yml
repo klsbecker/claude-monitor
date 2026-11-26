@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag against Cargo.toml
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"$').Matches[0].Groups[1].Value
+          if ("v$version" -ne $env:GITHUB_REF_NAME) { throw "Tag $env:GITHUB_REF_NAME does not match Cargo.toml version $version" }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Test
+        run: cargo test --release
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = '${{ steps.version.outputs.version }}'
+          New-Item -ItemType Directory dist | Out-Null
+          # A fixed name: winget installs the file under it and adds it as the ClaudeMonitor command.
+          $exe = "ClaudeMonitor.exe"
+          Copy-Item target/release/$exe "dist/$exe"
+          $hash = (Get-FileHash "dist/$exe" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $exe" | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          # Release notes: this version's section of the changelog.
+          $notes = (Get-Content CHANGELOG.md -Raw) -split '(?m)^## ' | Where-Object { $_ -match "^\[$([regex]::Escape($v))\]" }
+          if (-not $notes) { throw "CHANGELOG.md has no section for $v" }
+          ($notes -replace '^[^\n]*\n', '').Trim() | Set-Content -Encoding utf8 dist/notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Claude Monitor v${{ steps.version.outputs.version }}
+          body_path: dist/notes.md
+          files: |
+            dist/ClaudeMonitor.exe
+            dist/SHA256SUMS.txt
+
+  winget:
+    name: Update winget package
+    needs: release
+    runs-on: windows-latest
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      # Skipped until the WINGET_TOKEN secret exists (the first submission is manual, see docs/releasing.md).
+      - if: env.WINGET_TOKEN != ''
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: KlsBecker.ClaudeMonitor
+          version: ${{ needs.release.outputs.version }}
+          installers-regex: 'ClaudeMonitor\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
